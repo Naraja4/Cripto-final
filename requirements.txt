@@ -1,3 +1,4 @@
 mysql-connector-python~=9.0.0
 fastapi~=0.115.0
 pycryptodome ~=3.11.0
+django~=4.0.0

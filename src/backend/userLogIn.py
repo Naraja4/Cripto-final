@@ -1,4 +1,4 @@
-from database import Database
+from database.Database import Database
 from Crypto.Hash import SHA256
 import logging
 
