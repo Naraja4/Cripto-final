@@ -1,4 +1,4 @@
-# Projecto Criptografía
+# Proyecto Criptografía
 
 ## Integrantes
 
