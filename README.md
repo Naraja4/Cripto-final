@@ -16,6 +16,8 @@ docker-compose up -d
 
 ```
 uvicorn controller:app --host 127.0.0.1 --port 8081 --reload
+python -m uvicorn controller:app --host 127.0.0.1 --port 8081 --reload
+
 ```
 
 ## Para iniciar el frontend:
