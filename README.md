@@ -15,7 +15,7 @@ docker-compose up -d
 ## Para iniciar el controlador:
 
 ```
-fastapi dev src/backend/controller.py
+uvicorn controller:app --host 0.0.0.0 --port 8081 --reload
 ```
 
 ## Librerías:
