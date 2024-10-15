@@ -1,4 +1,4 @@
-from database import Database
+from database.Database import Database
 from Crypto.Hash import SHA256
 
 class UserLogIn:
@@ -25,7 +25,7 @@ class UserLogIn:
     
         #Esto returnea la salt y el hash de la password
 
-    def __hash_password(password: str, salt: str) -> str:
+    def __hash_password(self, password: str, salt: str) -> str:
         password_bytes = password.encode('utf-8')
         salt_bytes = salt.encode('utf-8')
         sha256 = SHA256.new()
