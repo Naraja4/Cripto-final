@@ -15,10 +15,18 @@ docker-compose up -d
 ## Para iniciar el controlador:
 
 ```
-uvicorn controller:app --host 0.0.0.0 --port 8081 --reload
+uvicorn controller:app --host 127.0.0.1 --port 8081 --reload
 ```
+
+## Para iniciar el frontend:
+
+```
+python \src\myproject\manage.py runserver
+```
+
 
 ## Librerías:
 * MySQL-connector: Proporciona conexión a base de datos MySQL.
 * FastAPI: Framework para desarrollo de APIs.
 * pycryptodome: Librería de criptografía.
+* Django: Framework para desarrollo web.
