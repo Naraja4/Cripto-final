@@ -21,7 +21,7 @@ class UserLogIn:
         return False
     
     def lookupUsername(self):
-        return self.db.query(f"SELECT * FROM users WHERE username = '{self.username}'")
+        return self.db.query(f"SELECT * FROM Users WHERE username = '{self.username}'")
     
         #Esto returnea la salt y el hash de la password
 
