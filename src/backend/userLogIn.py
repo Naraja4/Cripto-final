@@ -42,7 +42,7 @@ class UserLogIn:
     
     def lookupUsername(self):
         try:
-            query = f"SELECT * FROM users WHERE username = '{self.username}'"
+            query = f"SELECT * FROM Users WHERE username = '{self.username}'"
             logger.debug(f"Ejecutando consulta SQL: {query}")
             result = self.db.query(query)
             return result

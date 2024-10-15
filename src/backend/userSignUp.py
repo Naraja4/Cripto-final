@@ -11,7 +11,7 @@ class UserSignUp:
     def signup(self):
         salt = get_random_bytes(32).hex()
         hashed_password = self.__hash_password(self.password, salt)
-        self.db.query(f"INSERT INTO users (username, salt, hash) VALUES ('{self.username}', '{salt}', '{hashed_password}')")
+        self.db.query(f"INSERT INTO Users (username, salt, hashed_password) VALUES ('{self.username}', '{salt}', '{hashed_password}')")
 
     def __hash_password(self, password: str, salt: str) -> str:
         password_bytes = password.encode('utf-8')
