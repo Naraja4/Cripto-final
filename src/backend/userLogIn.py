@@ -29,6 +29,8 @@ class UserLogIn:
             salt = data[0][2]
             hash = data[0][3]
 
+            logger.debug(f"Salt y hash recuperados de la base de datos para el usuario: {self.username}")
+
             # Validar la contraseña
             if self.__hash_password(self.password, salt) == hash:
                 logger.info(f"Inicio de sesión exitoso para el usuario: {self.username}")
@@ -42,7 +44,7 @@ class UserLogIn:
     
     def lookupUsername(self):
         try:
-            query = f"SELECT * FROM users WHERE username = '{self.username}'"
+            query = f"SELECT * FROM Users WHERE username = '{self.username}'"
             logger.debug(f"Ejecutando consulta SQL: {query}")
             result = self.db.query(query)
             return result
@@ -57,6 +59,6 @@ class UserLogIn:
         sha256.update(salt_bytes + password_bytes)
         hashed_password = sha256.hexdigest()
         
-        logger.debug(f"Contraseña hash generada para el usuario: {self.username}")
+        logger.debug(f"Hash de salt + contraseña generada para el usuario: {self.username}")
         
         return hashed_password
