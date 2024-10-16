@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat encriptado</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsrsasign"></script> <!-- Librería para RSA en JS -->
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #chat-box { width: 400px; height: 400px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+        #message-input { width: 350px; padding: 5px; }
+        #send-btn { padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="chat-box"></div>
+
+    <input type="password" id="password-input" placeholder="Introduce tu contraseña">
+    <button id="unlock-btn">Desbloquear clave privada</button>
+
+    <input type="text" id="message-input" placeholder="Escribe un mensaje">
+    <button id="send-btn">Enviar</button>
+
+    <script>
+        let privateKey = null; // Clave privada del usuario
+        let receiverPublicKey = null; // Clave pública del destinatario (se puede obtener del backend)
+
+        document.getElementById('unlock-btn').addEventListener('click', async () => {
+            const password = document.getElementById('password-input').value;
+            // Solicita al back-end la clave privada cifrada, lo manda de vuelta y el front-end la desencripta
+            const response = await fetch('http://localhost:8081/api/v1/get-private-key');
+            const data = await response.json();
+            if (data.success) {
+                // Desencripta la clave privada con la contraseña
+                const decrypt = new RSAKey();
+                decrypt.readPrivateKeyFromPEMString(data.private_key); // Lee la clave privada cifrada
+                privateKey = decrypt.decrypt(password); // Desencripta la clave privada
+                alert('Clave privada desbloqueada');
+            } else {
+                alert('Contraseña incorrecta');
+            }
+        });
+
+        document.getElementById('send-btn').addEventListener('click', async () => {
+            const message = document.getElementById('message-input').value;
+
+            // Hacer call al backend para obtener la clave pública del receptor
+            const response = await fetch('http://localhost:8081/api/v1/get-public-key');
+            const data = await response.json();
+            if (data.success) {
+                receiverPublicKey = KEYUTIL.getKey(data.public_key);
+            }
+
+            if (receiverPublicKey && message && privateKey) {
+                // Cifra el mensaje con la clave pública del receptor usando RSA
+                const encrypt = new RSAKey();
+                encrypt.setPublic(receiverPublicKey.n, receiverPublicKey.e); // Usa la clave pública del receptor
+                const encryptedMessage = encrypt.encrypt(message);
+
+                //TODO: HMAC
+
+                // Enviar mensaje al backend
+                await fetch('http://localhost:8081/api/v1/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_chat: 1,
+                        id_emisor: 1,
+                        id_receptor: 2,
+                        mensaje: encryptedMessage
+                    })
+                });
+
+                document.getElementById('message-input').value = '';
+            } else {
+                alert('Desbloquea tu clave privada o selecciona un receptor válido.');
+            }
+        });
+
+        // Función para recibir y desencriptar los mensajes (pseudocódigo, ejemplo básico)
+        async function receiveMessages() {
+            const response = await fetch('/api/v1/get-messages');
+            const messages = await response.json();
+
+            messages.forEach(msg => {
+                const decrypt = new RSAKey();
+                decrypt.setPrivateEx(privateKey.n, privateKey.e, privateKey.d); // Usa la clave privada desencriptada
+
+                const decryptedMessage = decrypt.decrypt(msg.encrypted_message);
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML += `<div>${msg.sender}: ${decryptedMessage}</div>`;
+            });
+        }
+
+        //setInterval(receiveMessages, 5000); // Llama a esta función cada 5 segundos para obtener mensajes nuevos
+    </script>
+</body>
+</html>

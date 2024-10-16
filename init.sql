@@ -2,7 +2,9 @@ CREATE TABLE Users (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
     hashed_password CHAR(64) NOT NULL,
-    salt CHAR(64) NOT NULL
+    salt CHAR(64) NOT NULL,
+    public_key TEXT NOT NULL,
+    encrypted_private_key TEXT NOT NULL
 );
 
 CREATE TABLE Productos (
@@ -25,11 +27,13 @@ CREATE TABLE Chat (
 CREATE TABLE Mensajes (
     id_mensaje INT AUTO_INCREMENT PRIMARY KEY,
     id_chat INT NOT NULL,
-    id_usuario INT NOT NULL,
-    id_usuario2 INT NOT NULL,
+    id_emisor INT NOT NULL,
+    id_receptor INT NOT NULL,
     mensaje TEXT NOT NULL,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_chat) REFERENCES CHAT(id_chat),
-    FOREIGN KEY (id_usuario) REFERENCES Users(id_usuario)
+    HMAC CHAR(64) NOT NULL,
+    HMAC_key_encrypted TEXT NOT NULL,
+    FOREIGN KEY (id_chat) REFERENCES Chat(id_chat),
+    FOREIGN KEY (id_emisor) REFERENCES Users(id_usuario),
+    FOREIGN KEY (id_receptor) REFERENCES Users(id_usuario)
 );
-

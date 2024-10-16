@@ -35,7 +35,7 @@
         const data = await response.json();
         if (response.ok) {
             // Manejar el éxito (por ejemplo, redirigir)
-            window.location.href = '/dashboard/';
+            window.location.href = '/chat/';
         } else {
             // Manejar el error
             alert(data.detail || 'Error al iniciar sesión');
