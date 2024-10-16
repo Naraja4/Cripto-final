@@ -31,13 +31,13 @@ class LoginRequest(BaseModel):
 @app.post("/api/v1/login")
 async def login_view(login_request: LoginRequest):
     if UserLogIn(login_request.username, login_request.password).login():
-        return {"login": "success"}
+        return {"login": "success"}, 200
     else:
-        return {"login": "failed"}
+        return {"login": "failed"}, 401
 
 @app.post("/api/v1/signup")
 async def signup_view(login_request: LoginRequest):
     if UserSignUp(login_request.username, login_request.password).signup():
-        return {"signup": "success"}
+        return {"signup": "success"}, 200
     else:
-        return {"signup": "failed"}
+        return {"signup": "failed"}, 400
