@@ -26,8 +26,8 @@ class UserLogIn:
         if data:
             logger.debug(f"Usuario '{self.username}' encontrado en la base de datos.")
 
-            salt = data[0][2]
-            hash = data[0][3]
+            hash = data[0][2]
+            salt = data[0][3]
 
             logger.debug(f"Salt y hash recuperados de la base de datos para el usuario: {self.username}")
 
@@ -44,13 +44,14 @@ class UserLogIn:
     
     def lookupUsername(self):
         try:
-            query = f"SELECT * FROM Users WHERE username = '{self.username}'"
+            query = "SELECT * FROM Users WHERE username = %s"
             logger.debug(f"Ejecutando consulta SQL: {query}")
-            result = self.db.query(query)
+            result = self.db.query(query, (self.username,))
             return result
         except Exception as e:
             logger.error(f"Error al consultar la base de datos: {e}")
             return None
+
 
     def __hash_password(self, password: str, salt: str) -> str:
         password_bytes = password.encode('utf-8')

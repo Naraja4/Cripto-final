@@ -11,10 +11,11 @@ class Database:
                 database='testdb'
             )
         
-    def query(self, query):
+    def query(self, query, params=None):
         cursor = self.cnx.cursor()
-        cursor.execute(query)
+        cursor.execute(query, params)
         return cursor.fetchall()
+
 
     def close(self):
         self.cnx.close()

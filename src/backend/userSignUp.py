@@ -31,7 +31,8 @@ class UserSignUp:
         salt = get_random_bytes(32).hex()
         hashed_password = self.__hash_password(self.password, salt)
         logger.info(f"Contraseña {self.password} ha sido hasheada con SHA256.")
-        self.db.query(f"INSERT INTO users (username, salt, hashed_password) VALUES ('{self.username}', '{salt}', '{hashed_password}')")
+        self.db.query(f"INSERT INTO Users (username, salt, hashed_password) VALUES ('{self.username}', '{salt}', '{hashed_password}')")
+        self.db.cnx.commit()
         logger.info(f"{self.username} {self.password} ha sido introducido a la base de datos.")
 
     def __hash_password(self, password: str, salt: str) -> str:
