@@ -32,7 +32,8 @@ class getPublicKey:
             query = "SELECT public_key FROM Users WHERE username = %s"
             logger.debug(f"Ejecutando consulta SQL: {query}")
             result = self.db.query(query, (username,))
-            return result
+            print(f"Resultado de la consulta: {result[0][0]}")
+            return result[0][0]
         except Exception as e:
             logger.error(f"Error al consultar la base de datos: {e}")
             return None

@@ -1,5 +1,5 @@
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from userLogIn import UserLogIn
 from userSignUp import UserSignUp
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,6 +36,8 @@ class Message(BaseModel):
     id_emisor: int
     id_receptor: int
     mensaje: str
+    key: str
+    hmac: str
 
 @app.post("/api/v1/login")
 async def login_view(login_request: LoginRequest):
@@ -62,20 +64,35 @@ async def send_message_view(message: Message):
 async def get_messages_view():
     return {"messages": "messages"}
 
-@app.get("/api/v1/get-private-key")
-async def get_private_key_view():
-    key = getPrivateKey().getPrivateKey()
+@app.get("/api/v1/get-private-key/{username}/{password}")
+async def get_private_key_view(username: str, password: str):
+    try:
+        key = getPrivateKey().getPrivateKey(username, password)
+        key = key.decode()
+        print(key)
+        return {"private_key": key}
+    except:
+        #Retrun http code 400
+        raise HTTPException(status_code=400, detail="Failed to retrieve private key")
 
-    if key:
-        return {"private_key": key}, 200
-    else:
-        return {"private_key": "failed"}, 400
 
-@app.get("/api/v1/get-public-key")
-async def get_public_key_view():
-    key = getPublicKey().getPublicKey()
 
-    if key:
-        return {"public_key": key}, 200
-    else:
-        return {"public_key": "failed"}, 400
+@app.get("/api/v1/get-public-key/{username}")
+async def get_public_key_view(username: str):
+    try:
+        key = getPublicKey().getPublicKey(username)
+        return {"public_key": key}
+    except:
+        #Retrun http code 400
+        print("Failed to retrieve public key")
+        raise HTTPException(status_code=400, detail="Failed to retrieve public key")
+    
+@app.get("/api/v1/get-backend-public-key")
+async def get_backend_public_key():
+    try:
+        with open("clavesRSA/public_key.pem", "rb") as public_file:
+            public_key = public_file.read()
+            return {"public_key": public_key}
+    except Exception as e:
+        #Retrun http code 400
+        raise HTTPException(status_code=400, detail="Failed to retrieve backend public key")

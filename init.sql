@@ -29,10 +29,9 @@ CREATE TABLE Mensajes (
     id_chat INT NOT NULL,
     id_emisor INT NOT NULL,
     id_receptor INT NOT NULL,
-    mensaje TEXT NOT NULL,
+    mensaje_encriptado_receptor TEXT NOT NULL,
+    mensaje_encriptado_emisor TEXT NOT NULL,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    HMAC CHAR(64) NOT NULL,
-    HMAC_key_encrypted TEXT NOT NULL,
     FOREIGN KEY (id_chat) REFERENCES Chat(id_chat),
     FOREIGN KEY (id_emisor) REFERENCES Users(id_usuario),
     FOREIGN KEY (id_receptor) REFERENCES Users(id_usuario)
