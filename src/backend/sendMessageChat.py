@@ -10,7 +10,7 @@ import time
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-file_handler = logging.FileHandler('logger.log', mode='w')
+file_handler = logging.FileHandler('logger.log', mode='a')
 file_handler.setLevel(logging.INFO)
 file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 file_handler.setFormatter(file_formatter)
@@ -37,6 +37,7 @@ class sendMessageChat:
         # Genera clave para AES/HMAC
         mensaje = self.mensaje
         key = get_random_bytes(32)
+        logger.info(f"Se ha generado la clave :{key}")
         
         # Cifrar mensaje con AES
         nonce = get_random_bytes(8)
@@ -45,14 +46,14 @@ class sendMessageChat:
         ct = nonce + ct_bytes
         ct = ct.hex()
 
-        print("Mensaje cifrado: ", ct)
+        logger.info(f"Se ha codificado el mensaje obteniendo:{ct}")
 
         # Con la key, haz HMAC del mensaje usando key como clave
         hmac_computed = HMAC.new(key, digestmod=SHA256)
         hmac_computed.update(mensaje.encode())
         hmac_computed = hmac_computed.hexdigest()
 
-        print("HMAC computed: ", hmac_computed)
+        logger.info(f"Se ha generado la clave HMAC que es :{hmac_computed}")
         
         # Clave publica en el backend, que se encuentra en claveRSA/public_key.pem
         open_key = open("clavesRSA/public_key.pem", "rb")
@@ -63,7 +64,7 @@ class sendMessageChat:
         # Codifica la key
         cipher_rsa = PKCS1_OAEP.new(public_key)
         key_encrypted = cipher_rsa.encrypt(key)
-
+        logger.info(f"Se ha cifrado la key obteniendo:{key_encrypted}")
         # Clave privada en el backend, que se encuentra en claveRSA/private_key.pem
         open_key = open("clavesRSA/private_key.pem", "rb")
         private_key = open_key.read()
@@ -73,7 +74,7 @@ class sendMessageChat:
         # Decodifica la key
         cipher_rsa = PKCS1_OAEP.new(private_key)
         key_decrypted = cipher_rsa.decrypt(key_encrypted)
-
+        logger.info(f"Se ha decodificado la clave obteniendo:{key_decrypted}")
         print("Decoded key: ", key_decrypted)
 
          # Computa el HMAC del mensaje con la key decodificada
@@ -86,14 +87,14 @@ class sendMessageChat:
             print("HMAC computed decoded: ", hmac_computed_decoded)
             print("HMACs do not match")
             return False
-        
+        logger.info(f"Se ha confirmado que el HMAC es el correcto")
         #Ahora se puede descifrar self.mensaje con la key decodificada, ya que self.message fue cifrado con la key con AES
         nonce = bytes.fromhex(ct[:16])
         ct = bytes.fromhex(ct[16:])
         cipher = AES.new(key, AES.MODE_CTR, nonce=nonce)
         mensaje = cipher.decrypt(ct).decode()
 
-        print("Mensaje descifrado: ", mensaje)
+        logger.info(f"Se ha descifrado el mensaje obteniendo:{mensaje}")
         
         # Obtener claves publicas de receptor y emisor
         query = "SELECT id_usuario, public_key FROM Users WHERE id_usuario = %s OR id_usuario = %s"
@@ -105,18 +106,17 @@ class sendMessageChat:
                 public_key_emisor = row[1]
             else:
                 public_key_receptor = row[1]
-
+        logger.info(f"La clave publica del receptor es:{public_key_emisor}")
         # Cifrar mensaje con clave publica del receptor
         key = RSA.import_key(public_key_receptor)
-        print("Clave publica receptor: ", public_key_receptor)
+        logger.info(f"La clave publica del receptor es:{public_key_receptor}")
         cipher_rsa = PKCS1_OAEP.new(key)
         mensaje_receptor = cipher_rsa.encrypt(mensaje.encode()).hex()
         # Cifrar clave con clave publica del emisor
         key = RSA.import_key(public_key_emisor)
         cipher_rsa = PKCS1_OAEP.new(key)
-        print("Clave publica emisor: ", public_key_emisor)
         mensaje_emisor = cipher_rsa.encrypt(mensaje.encode()).hex()
-
+        logger.info(f"Se ha cifrado el mensaje con la clave publica del emisor y se ha alamcenado en la base de datos")
         # Insertar mensaje en la base de datos
         query = "INSERT INTO Mensajes (id_chat, id_emisor, id_receptor, mensaje_encriptado_emisor, mensaje_encriptado_receptor) VALUES (%s, %s, %s, %s, %s)"
         self.db.query(query, (self.id_chat, self.id_emisor, self.id_receptor, mensaje_emisor, mensaje_receptor))

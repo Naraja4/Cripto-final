@@ -10,7 +10,7 @@ import time
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-file_handler = logging.FileHandler('logger.log', mode='w')
+file_handler = logging.FileHandler('logger.log', mode='a')
 file_handler.setLevel(logging.INFO)
 file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 file_handler.setFormatter(file_formatter)
@@ -39,19 +39,18 @@ class getPrivateKey:
 
             encrypted_data = bytes.fromhex(result[0][0])
 
-            #SHA-256 hash of the password to use as the AES key
+            #SHA-256 hash de la contraseña para usar como la clave de AES
             AES_key = SHA256.new()
             AES_key.update(password.encode())
 
-            # FIX HERE, result[0][0] is not a string, it is a bytes object, but it is being treated as a string
             nonce = encrypted_data[:8]
-            print(f"Nonce es: {nonce}")
+            logger.info(f"Nonce es: {nonce}")
             encrypted_key = encrypted_data[8:]
-            print(f"Clave privada encriptada es: {encrypted_key}")
+            logger.info(f"Se ha encriptado la clave obteniendo: {encrypted_key}")
 
-            logger.info(f"AES de password es: {AES_key.hexdigest()}")
+            logger.info(f"AES de la contraseña es: {AES_key.hexdigest()}")
 
-            # Decrypt private key with AES with key derived from password
+            # Decriptar la clave privada con AES
             cipher = AES.new(AES_key.digest(), AES.MODE_CTR, nonce=nonce)
             logger.info(f"result[0][0] es: {result[0][0]}")
             private_key = cipher.decrypt(encrypted_key)

@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-file_handler = logging.FileHandler('logger.log', mode='w')
+file_handler = logging.FileHandler('logger.log', mode='a')
 file_handler.setLevel(logging.INFO)
 file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 file_handler.setFormatter(file_formatter)
@@ -35,7 +35,7 @@ class UserSignUp:
         hashed_password = self.__hash_password(self.password, salt)
         logger.info(f"Contraseña {self.password} ha sido hasheada con SHA256.")
 
-        #SHA-256 hash of the password to use as the AES key
+        #SHA-256 hash de la contraseña para usar como clave AESy
         AES_key = SHA256.new()
         AES_key.update(self.password.encode())
         logger.info(f"AES de password es: {AES_key.hexdigest()}")
@@ -43,7 +43,7 @@ class UserSignUp:
         # Crear un nonce de 8 bytes para el modo CTR
         nonce = get_random_bytes(8)
 
-        # Encrypt private key with AES with key derived from password
+        # Se ha encriptado la clave privada con la clave derivada de la contraseña
         cipher = AES.new(AES_key.digest(), AES.MODE_CTR, nonce=nonce)
 
         private_key = key.export_key()
