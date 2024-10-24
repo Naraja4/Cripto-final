@@ -46,27 +46,25 @@ class UserSignUp:
         # Encrypt private key with AES with key derived from password
         cipher = AES.new(AES_key.digest(), AES.MODE_CTR, nonce=nonce)
 
-        # Take out -----BEGIN PRIVATE----- and -----END PRIVATE KEY-----
         private_key = key.export_key()
-        private_key = private_key.split(b'\n')[1:-1]
-        private_key = b''.join(private_key)
-
         encrypted_key = cipher.encrypt(private_key)
         encrypted_key = nonce + encrypted_key
         
         logger.info(f"Clave privada ha sido encriptada con AES.")
 
-        #Take out -----BEGIN PUBLIC KEY----- and -----END PUBLIC KEY-----
         public_key = key.publickey().export_key()
-        public_key = public_key.split(b'\n')[1:-1]
-        public_key = b''.join(public_key)
 
         logger.info(f"Clave privada es: {private_key}")
         logger.info(f"Clave privada encriptada es: {encrypted_key.hex()}")
         
-        self.db.query(f"INSERT INTO Users (username, salt, hashed_password, public_key, encrypted_private_key) VALUES ('{self.username}', '{salt}', '{hashed_password}', '{public_key.hex()}', '{encrypted_key.hex()}')")
+        query = """
+            INSERT INTO Users (username, salt, hashed_password, public_key, encrypted_private_key) 
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        values = (self.username, salt, hashed_password, public_key, encrypted_key.hex())
+
+        self.db.query(query, values)
         self.db.cnx.commit()
-        
         logger.info(f"{self.username} {self.password} ha sido introducido a la base de datos.")
 
     def __hash_password(self, password: str, salt: str) -> str:

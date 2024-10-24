@@ -1,7 +1,7 @@
 from database.Database import Database
-from Crypto.Hash import SHA256
+from Crypto.Hash import SHA256, HMAC
 from Crypto.Random import get_random_bytes
-from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.PublicKey import RSA
 import logging
 import time
@@ -26,40 +26,79 @@ logger.addHandler(console_handler)
 
 
 class sendMessageChat:
-    def __init__(self, id_chat, id_emisor, id_receptor, mensaje, key, hmac):
+    def __init__(self, id_chat, id_emisor, id_receptor, mensaje):
         self.id_chat = id_chat
         self.id_emisor = id_emisor
         self.id_receptor = id_receptor
         self.mensaje = mensaje
-        self.key = key
-        self.hmac = hmac
-        self.fecha = time.time()
         self.db = Database()
     
     def store(self):
-        # Decodifica la key con la clave privada en el backend, que se encuentra en claveRSA/private_key.pem
+        # Genera clave para AES/HMAC
+        mensaje = self.mensaje
+        key = get_random_bytes(32)
+        
+        # Cifrar mensaje con AES
+        nonce = get_random_bytes(8)
+        cipher = AES.new(key, AES.MODE_CTR, nonce=nonce)
+        ct_bytes = cipher.encrypt(mensaje.encode())
+        ct = nonce + ct_bytes
+        ct = ct.hex()
+
+        print("Mensaje cifrado: ", ct)
+
+        # Con la key, haz HMAC del mensaje usando key como clave
+        hmac_computed = HMAC.new(key, digestmod=SHA256)
+        hmac_computed.update(mensaje.encode())
+        hmac_computed = hmac_computed.hexdigest()
+
+        print("HMAC computed: ", hmac_computed)
+        
+        # Clave publica en el backend, que se encuentra en claveRSA/public_key.pem
+        open_key = open("clavesRSA/public_key.pem", "rb")
+        public_key = open_key.read()
+        open_key.close()
+        public_key = RSA.import_key(public_key)
+
+        # Codifica la key
+        cipher_rsa = PKCS1_OAEP.new(public_key)
+        key_encrypted = cipher_rsa.encrypt(key)
+
+        # Clave privada en el backend, que se encuentra en claveRSA/private_key.pem
         open_key = open("clavesRSA/private_key.pem", "rb")
         private_key = open_key.read()
         open_key.close()
-
-        # Ahora con la clave privada, se puede decodificar la key
-        key = RSA.import_key(private_key)
+        private_key = RSA.import_key(private_key)
 
         # Decodifica la key
-        cipher_rsa = PKCS1_OAEP.new(key)
-        key = cipher_rsa.decrypt(self.key)
+        cipher_rsa = PKCS1_OAEP.new(private_key)
+        key_decrypted = cipher_rsa.decrypt(key_encrypted)
 
-        # Verifica el HMAC
-        h = SHA256.new()
-        h.update(self.mensaje.encode())
-        h = h.hexdigest()
-        if h != self.hmac:
-            logger.error(f"HMAC no coincide.")
+        print("Decoded key: ", key_decrypted)
+
+         # Computa el HMAC del mensaje con la key decodificada
+        hmac_computed_decoded = HMAC.new(key_decrypted, digestmod=SHA256)
+        hmac_computed_decoded.update(mensaje.encode())
+        hmac_computed_decoded = hmac_computed_decoded.hexdigest()
+        
+        if hmac_computed != hmac_computed_decoded:
+            print("HMAC computed: ", hmac_computed)
+            print("HMAC computed decoded: ", hmac_computed_decoded)
+            print("HMACs do not match")
             return False
         
+        #Ahora se puede descifrar self.mensaje con la key decodificada, ya que self.message fue cifrado con la key con AES
+        nonce = bytes.fromhex(ct[:16])
+        ct = bytes.fromhex(ct[16:])
+        cipher = AES.new(key, AES.MODE_CTR, nonce=nonce)
+        mensaje = cipher.decrypt(ct).decode()
+
+        print("Mensaje descifrado: ", mensaje)
+        
         # Obtener claves publicas de receptor y emisor
-        query = "SELECT public_key FROM Users WHERE id_user = %s OR id_user = %s"
+        query = "SELECT id_usuario, public_key FROM Users WHERE id_usuario = %s OR id_usuario = %s"
         result = self.db.query(query, (self.id_emisor, self.id_receptor))
+        print(result)
         # Asignar claves publicas a las variables correspondientes
         for row in result:
             if row[0] == self.id_emisor:
@@ -69,17 +108,19 @@ class sendMessageChat:
 
         # Cifrar mensaje con clave publica del receptor
         key = RSA.import_key(public_key_receptor)
+        print("Clave publica receptor: ", public_key_receptor)
         cipher_rsa = PKCS1_OAEP.new(key)
-        mensaje_receptor = cipher_rsa.encrypt(self.mensaje.encode())
-
+        mensaje_receptor = cipher_rsa.encrypt(mensaje.encode()).hex()
         # Cifrar clave con clave publica del emisor
         key = RSA.import_key(public_key_emisor)
         cipher_rsa = PKCS1_OAEP.new(key)
-        mensaje_emisor = cipher_rsa.encrypt(self.mensaje.encode())
+        print("Clave publica emisor: ", public_key_emisor)
+        mensaje_emisor = cipher_rsa.encrypt(mensaje.encode()).hex()
 
         # Insertar mensaje en la base de datos
-        query = "INSERT INTO Messages (id_chat, id_emisor, id_receptor, mensaje_encriptado_emisor, mensaje_encriptado_receptor, fecha) VALUES (%s, %s, %s, %s, %s, %s)"
-        self.db.query(query, (self.id_chat, self.id_emisor, self.id_receptor, mensaje_emisor, mensaje_receptor, self.fecha))
+        query = "INSERT INTO Mensajes (id_chat, id_emisor, id_receptor, mensaje_encriptado_emisor, mensaje_encriptado_receptor) VALUES (%s, %s, %s, %s, %s)"
+        self.db.query(query, (self.id_chat, self.id_emisor, self.id_receptor, mensaje_emisor, mensaje_receptor))
+        self.db.cnx.commit()
 
         return True
 

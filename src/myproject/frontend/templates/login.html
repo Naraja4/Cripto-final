@@ -35,7 +35,12 @@
         const data = await response.json();
         if (response.ok) {
             // Manejar el éxito (por ejemplo, redirigir)
+            sessionStorage.setItem('usuario',document.getElementById('username').value );
+            alert('El valor del input es: ' + document.getElementById('username').value);
+            sessionStorage.setItem('pass',document.getElementById('password').value );
+            alert('El valor del pass es: ' + document.getElementById('password').value);
             window.location.href = '/chat/';
+            
         } else {
             // Manejar el error
             alert(data.detail || 'Error al iniciar sesión');

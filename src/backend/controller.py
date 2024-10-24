@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from getPublicKey import getPublicKey
 from getPrivateKey import getPrivateKey
 from sendMessageChat import sendMessageChat
+from getMessagesChat import getMessagesChat
 
 app = FastAPI()
 
@@ -36,8 +37,6 @@ class Message(BaseModel):
     id_emisor: int
     id_receptor: int
     mensaje: str
-    key: str
-    hmac: str
 
 @app.post("/api/v1/login")
 async def login_view(login_request: LoginRequest):
@@ -55,14 +54,16 @@ async def signup_view(login_request: LoginRequest):
 
 @app.post("/api/v1/send-message")
 async def send_message_view(message: Message):
-    if sendMessageChat(message.id_chat, message.id_emisor, message.id_receptor, message.mensaje).sendMessage():
+    if sendMessageChat(message.id_chat, message.id_emisor, message.id_receptor, message.mensaje).store():
         return {"message": "success"}, 200
     else:
         return {"message": "failed"}, 400
 
-@app.get("/api/v1/get-messages")
-async def get_messages_view():
-    return {"messages": "messages"}
+@app.get("/api/v1/get-messages/{id_chat}/{id_user}/{password}")
+async def get_messages_view(id_chat: int, id_user: int, password: str):
+    print("id_chat: ", id_chat)
+    messages = getMessagesChat(id_chat, id_user, password).getMessages()
+    return {"messages": messages}
 
 @app.get("/api/v1/get-private-key/{username}/{password}")
 async def get_private_key_view(username: str, password: str):
@@ -76,7 +77,6 @@ async def get_private_key_view(username: str, password: str):
         raise HTTPException(status_code=400, detail="Failed to retrieve private key")
 
 
-
 @app.get("/api/v1/get-public-key/{username}")
 async def get_public_key_view(username: str):
     try:
@@ -87,7 +87,7 @@ async def get_public_key_view(username: str):
         print("Failed to retrieve public key")
         raise HTTPException(status_code=400, detail="Failed to retrieve public key")
     
-@app.get("/api/v1/get-backend-public-key")
+'''@app.get("/api/v1/get-backend-public-key")
 async def get_backend_public_key():
     try:
         with open("clavesRSA/public_key.pem", "rb") as public_file:
@@ -95,4 +95,6 @@ async def get_backend_public_key():
             return {"public_key": public_key}
     except Exception as e:
         #Retrun http code 400
-        raise HTTPException(status_code=400, detail="Failed to retrieve backend public key")
+        raise HTTPException(status_code=400, detail="Failed to retrieve backend public key")'''
+
+    

@@ -14,11 +14,9 @@
     </style>
 </head>
 <body>
+    
 
     <div id="chat-box"></div>
-
-    <input type="password" id="password-input" placeholder="Introduce tu contraseña">
-    <button id="unlock-btn">Desbloquear clave privada</button>
 
     <input type="text" id="message-input" placeholder="Escribe un mensaje">
     <button id="send-btn">Enviar</button>
@@ -27,27 +25,14 @@
         let privateKey = null; // Clave privada del usuario
         let receiverPublicKey = null; // Clave pública del destinatario (se puede obtener del backend)
 
-        document.getElementById('unlock-btn').addEventListener('click', async () => {
-            const password = document.getElementById('password-input').value;
-            const username = '123'; // TODO: Obtener el usuario actual, saber quien soy
-            // Solicita al back-end la clave privada cifrada, lo manda de vuelta y el front-end la desencripta
-            const response = await fetch('http://localhost:8081/api/v1/get-private-key/' + username+ '/' + password);
-            const data = await response.json();
-            // Esta es la respuesta que se espera del back-end: {"private_key": key}
-            //Queremos ver si el segundo valor es 200
-            if (response.status === 200) {
-                privateKey = data.private_key; 
-            }
-            else {
-                alert('Error al desbloquear la clave privada');
-            }
-        });
+        const username = sessionStorage.getItem('usuario');
+        const password = sessionStorage.getItem('pass');
 
         document.getElementById('send-btn').addEventListener('click', async () => {
             const message = document.getElementById('message-input').value;
 
             // Hacer call al backend para obtener la clave pública del receptor
-            const response = await fetch('http://localhost:8081/api/v1/get-backend-public-key/');
+            /* const response = await fetch('http://localhost:8081/api/v1/get-backend-public-key/');
             const data = await response.json();
             if (response.status === 200) {
                 receiverPublicKey = data.public_key;
@@ -56,22 +41,9 @@
             }
             console.log(receiverPublicKey);
             console.log(message);
-            console.log(privateKey);
-            if (receiverPublicKey && message && privateKey) {
+            console.log(privateKey);*/
+            if (message) {
                 console.log('Enviando mensaje...');
-                // Genera una llave para AES (simétrica) y cifra el mensaje
-                const aesKey = CryptoJS.lib.WordArray.random(32).toString();
-                console.log('AES Key:', aesKey);
-                const encryptedMessage = CryptoJS.AES.encrypt(message, aesKey).toString();
-                console.log('Mensaje cifrado:', encryptedMessage);
-
-                // Cifra la llave AES con la clave pública del receptor, que esta en receiverPublicKey
-                // y es directamente la clave publica del receptor, NO los exponentes ni los modulos
-                
-                
-
-
-                console.log('Mensaje cifrado:', encryptedMessage);
                 // Enviar mensaje al backend
                 await fetch('http://localhost:8081/api/v1/send-message', {
                     method: 'POST',
@@ -80,34 +52,52 @@
                         id_chat: 1,
                         id_emisor: 13,
                         id_receptor: 14,
-                        mensaje: encryptedMessage,
-                        key: encryptedAesKey,
-                        hmac: hmac
+                        mensaje: message,
                     })
                 });
 
                 document.getElementById('message-input').value = '';
             } else {
-                alert('Desbloquea tu clave privada o selecciona un receptor válido.');
+                alert('Escribe un mensaje.');
             }
         });
 
-        // Función para recibir y desencriptar los mensajes (pseudocódigo, ejemplo básico)
+        // Función para recibir los mensajes
         async function receiveMessages() {
-            const response = await fetch('/api/v1/get-messages');
+            if (!password || password.trim() === "") {
+                console.log("Password está vacío, no se ejecuta la función.");
+                return; // Detiene la ejecución si password está vacío
+            }
+            const response = await fetch('http://localhost:8081/api/v1/get-messages/1/'+username+'/'+password);
             const messages = await response.json();
 
-            messages.forEach(msg => {
-                const decrypt = new RSAKey();
-                decrypt.setPrivateEx(privateKey.n, privateKey.e, privateKey.d); // Usa la clave privada desencriptada
+            //Llega un JSON con los mensajes, de la forma {"messages": [{"contenido": "Hola","enviado_por_ti": true},{"contenido": "Hola","enviado_por_ti": false}]}
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = ''; // Limpiar el contenido del chat antes de añadir los mensajes nuevos
 
-                const decryptedMessage = decrypt.decrypt(msg.encrypted_message);
-                const chatBox = document.getElementById('chat-box');
-                chatBox.innerHTML += `<div>${msg.sender}: ${decryptedMessage}</div>`;
-            });
+            // Recorre los mensajes y genera HTML para mostrarlos
+            for (let message of messages.messages) {
+                const messageElement = document.createElement('div');
+                messageElement.style.marginBottom = '10px'
+                
+                // Aplica una clase o estilo diferente dependiendo de si el mensaje fue enviado por el usuario o no
+                if (message.enviado_por_ti) {
+                    messageElement.style.textAlign = 'right'; // Mensajes enviados por el usuario se alinean a la derecha
+                    messageElement.innerHTML = `<span style="background-color: #dcf8c6; padding: 5px 10px; border-radius: 10px; display: inline-block;">${message.contenido}</span>`;
+                } else {
+                    messageElement.style.textAlign = 'left'; // Mensajes recibidos se alinean a la izquierda
+                    messageElement.innerHTML = `<span style="background-color: #f1f0f0; padding: 5px 10px; border-radius: 10px; display: inline-block;">${message.contenido}</span>`;
+                }
+
+                // Añade el mensaje al chat
+                chatBox.appendChild(messageElement);
+            }
+
+            // Auto-scroll para que siempre muestre los mensajes más recientes
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
         }
-
-        //setInterval(receiveMessages, 5000); // Llama a esta función cada 5 segundos para obtener mensajes nuevos
+        setInterval(receiveMessages, 5000); // Llama a esta función cada 5 segundos para obtener mensajes nuevos
     </script>
 </body>
 </html>
