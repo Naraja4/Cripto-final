@@ -1,0 +1,37 @@
+Para poder correr el proyecto:
+## Haz este comando para instalar las dependencias de python:
+
+```
+pip install requirements.txt -r
+```
+
+## Para iniciar la base de datos:
+
+```
+docker-compose up -d
+```
+
+## Para iniciar el frontend:
+
+```
+python \src\myproject\manage.py runserver
+```
+
+## Para iniciar el controlador, entra a src/backend y ejecuta:
+
+```
+uvicorn controller:app --host 127.0.0.1 --port 8081 --reload
+
+o bien 
+
+python -m uvicorn controller:app --host 127.0.0.1 --port 8081 --reload
+```
+
+Autenticación:
+Entra a http://127.0.0.1:8000/ y registra un usuario. En el logger.log y en la consolo saldrán los algoritmos usados.
+Una vez registrado, puedes iniciar sesión con el usuario creado.
+
+Cifrado e Integridad:
+Tras registrarte, entrarás en un chat donde podrás enviar mensajes cifrados y firmados. En el logger.log y en la consola saldrán los algoritmos usados.
+NOTA: De momento, está hardcodeado para que solo una persona, el usuario con el id 13, pueda enviar mensajes cifrados y firmados, con
+el id 14 como receptor. 
