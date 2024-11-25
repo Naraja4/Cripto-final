@@ -19,7 +19,7 @@ console_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s
 console_handler.setFormatter(console_formatter)
 
 logger.addHandler(file_handler)
-logger.addHandler(console_handler)
+#logger.addHandler(console_handler)
 
 
 
@@ -32,6 +32,17 @@ class getPublicKey:
             query = "SELECT public_key FROM Users WHERE username = %s"
             logger.debug(f"Ejecutando consulta SQL: {query}")
             result = self.db.query(query, (username,))
+            print(f"Resultado de la consulta: {result[0][0]}")
+            return result[0][0]
+        except Exception as e:
+            logger.error(f"Error al consultar la base de datos: {e}")
+            return None
+        
+    def getPublicKey_withId(self, id_user):
+        try:
+            query = "SELECT public_key FROM Users WHERE id_usuario = %s"
+            logger.debug(f"Ejecutando consulta SQL: {query}")
+            result = self.db.query(query, (id_user,))
             print(f"Resultado de la consulta: {result[0][0]}")
             return result[0][0]
         except Exception as e:

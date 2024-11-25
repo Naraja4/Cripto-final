@@ -28,7 +28,7 @@ console_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s
 console_handler.setFormatter(console_formatter)
 
 logger.addHandler(file_handler)
-logger.addHandler(console_handler)
+#logger.addHandler(console_handler)
 
 class getMessagesChat:
     def __init__(self, id_chat, id_user, password):

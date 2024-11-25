@@ -52,6 +52,7 @@ class Message(BaseModel):
     id_emisor: int
     id_receptor: int
     mensaje: str
+    password: str
 
 @app.post("/api/v1/login")
 async def login_view(login_request: LoginRequest):
@@ -73,7 +74,7 @@ async def signup_view(login_request: LoginRequest):
 
 @app.post("/api/v1/send-message")
 async def send_message_view(message: Message):
-    if sendMessageChat(message.id_chat, message.id_emisor, message.id_receptor, message.mensaje).store():
+    if sendMessageChat(message.id_chat, message.id_emisor, message.id_receptor, message.mensaje, message.password).store():
         return {"message": "success"}, 200
     else:
         return {"message": "failed"}, 400

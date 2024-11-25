@@ -5,6 +5,8 @@ from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.PublicKey import RSA
 import logging
 import time
+from getPrivateKey import getPrivateKey
+from getPublicKey import getPublicKey
 
 
 logger = logging.getLogger(__name__)
@@ -26,11 +28,12 @@ logger.addHandler(console_handler)
 
 
 class sendMessageChat:
-    def __init__(self, id_chat, id_emisor, id_receptor, mensaje):
+    def __init__(self, id_chat, id_emisor, id_receptor, mensaje, password):
         self.id_chat = id_chat
         self.id_emisor = id_emisor
         self.id_receptor = id_receptor
         self.mensaje = mensaje
+        self.password = password
         self.db = Database()
     
     def store(self):
@@ -65,6 +68,41 @@ class sendMessageChat:
         cipher_rsa = PKCS1_OAEP.new(public_key)
         key_encrypted = cipher_rsa.encrypt(key)
         logger.info(f"Se ha cifrado la key obteniendo:{key_encrypted}")
+
+
+        # Firmar el HMAC con la clave privada
+
+        # Pillar clave privada emisor
+        private_key = getPrivateKey().getPrivateKey_withId(self.id_emisor, self.password)
+        logger.info(f"Se ha obtenido la clave privada del emisor")
+
+        private_key = RSA.import_key(private_key)
+
+        private_key_d = private_key.d
+        private_key_n = private_key.n
+
+        # Firmar el HMAC
+        signature = pow(int(hmac_computed, 16), private_key_d, private_key_n)
+        logger.info(f"Se ha firmado el HMAC obteniendo:{signature}")
+
+        #-------------------------------------------------------------------------------
+
+        # Descifrar la firma con la clave publica
+        # Pillar clave publica emisor
+        public_key = getPublicKey().getPublicKey_withId(self.id_emisor)
+        logger.info(f"Se ha obtenido la clave publica del emisor")
+
+        public_key = RSA.import_key(public_key)
+
+        public_key_e = public_key.e
+        public_key_n = public_key.n
+
+        # Descifrar la firma
+        if pow(signature, public_key_e, public_key_n) != int(hmac_computed, 16):
+            logger.error(f"Las firmas no coinciden")
+            return False
+
+        logger.info(f"Se ha confirmado que las firmas coinciden")
         # Clave privada en el backend, que se encuentra en claveRSA/private_key.pem
         open_key = open("clavesRSA/private_key.pem", "rb")
         private_key = open_key.read()
