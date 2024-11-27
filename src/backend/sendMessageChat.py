@@ -4,9 +4,11 @@ from Crypto.Random import get_random_bytes
 from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.PublicKey import RSA
 import logging
-import time
+from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric import padding
 from getPrivateKey import getPrivateKey
 from getPublicKey import getPublicKey
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -85,7 +87,76 @@ class sendMessageChat:
         signature = pow(int(hmac_computed, 16), private_key_d, private_key_n)
         logger.info(f"Se ha firmado el HMAC obteniendo:{signature}")
 
+        # Aquí se enviarían los certificados
+
         #-------------------------------------------------------------------------------
+
+        # Verificar certificados
+        def load_certificate(filepath):
+            with open(filepath, "rb") as cert_file:
+                cert_data = cert_file.read()
+            return x509.load_pem_x509_certificate(cert_data)
+        
+        def verify_signature(cert, issuer_cert):
+            try:
+                issuer_public_key = issuer_cert.public_key()
+                issuer_public_key.verify(
+                    cert.signature,
+                    cert.tbs_certificate_bytes,
+                    padding.PKCS1v15(),
+                    cert.signature_hash_algorithm,
+                )
+                logger.info(f"Certificado {cert.subject.rfc4514_string()} es válido y está firmado por {issuer_cert.subject.rfc4514_string()}")
+                return True
+            except Exception as e:
+                logger.error(f"Error verificando la firma entre {cert.subject.rfc4514_string()} y {issuer_cert.subject.rfc4514_string()}: {e}")
+                return False
+            
+        def verify_validity_dates(cert):
+            now = datetime.utcnow()
+            if cert.not_valid_before <= now <= cert.not_valid_after:
+                logger.info(f"Certificado {cert.subject.rfc4514_string()} está dentro del período de validez.")
+                return True
+            else:
+                logger.error(f"Certificado {cert.subject.rfc4514_string()} está fuera del período de validez.")
+                return False
+            
+        def verify_certificate_chain(cert_paths):
+            # Cargar todos los certificados en el array
+            certs = [load_certificate(path) for path in cert_paths]
+
+            # Verificar cada certificado en la cadena
+            for i in range(len(certs) - 1):
+                cert = certs[i]
+                issuer_cert = certs[i + 1]
+
+                # Verificar fechas de validez
+                if not verify_validity_dates(cert):
+                    logger.error(f"Error: Certificado {cert.subject.rfc4514_string()} fuera de validez.")
+                    return False
+
+                # Verificar que el certificado está firmado por el emisor (issuer)
+                if not verify_signature(cert, issuer_cert):
+                    logger.error(f"Error: Certificado {cert.subject.rfc4514_string()} no está firmado por {issuer_cert.subject.rfc4514_string()}")
+                    return False
+
+            # Verificar fechas de validez del certificado raíz
+            if not verify_validity_dates(certs[-1]):
+                logger.error(f"Error: Certificado raíz {certs[-1].subject.rfc4514_string()} fuera de validez.")
+                return False
+
+            return True
+        
+        if self.id_emisor == 13:
+            cadena_certificados = ["certificados/Acert.pem", "certificados/ac2cert.pem", "certificados/ac1cert.pem"]
+        else:
+            cadena_certificados = ["certificados/Bcert.pem", "certificados/ac2cert.pem", "certificados/ac1cert.pem"]
+        
+        if not verify_certificate_chain(cadena_certificados):
+            logger.error("Error: La cadena de certificados no es válida.")
+            return False
+        
+        logger.info("La cadena de certificados es válida.")
 
         # Descifrar la firma con la clave publica
         # Pillar clave publica emisor
