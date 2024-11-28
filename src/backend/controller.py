@@ -79,9 +79,9 @@ async def send_message_view(message: Message):
     else:
         return {"message": "failed"}, 400
 
-@app.get("/api/v1/get-messages/{id_chat}/{id_user}/{password}")
-async def get_messages_view(id_chat: int, id_user: int, password: str):
-    messages = getMessagesChat(id_chat, id_user, password).getMessages()
+@app.get("/api/v1/get-messages/{id_chat}/{username}/{password}")
+async def get_messages_view(id_chat: int, username: str, password: str):
+    messages = getMessagesChat(id_chat, username, password).getMessages()
     return {"messages": messages}
 
 @app.get("/api/v1/get-private-key/{username}/{password}")

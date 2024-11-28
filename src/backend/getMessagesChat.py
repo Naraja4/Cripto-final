@@ -31,11 +31,11 @@ logger.addHandler(file_handler)
 #logger.addHandler(console_handler)
 
 class getMessagesChat:
-    def __init__(self, id_chat, id_user, password):
+    def __init__(self, id_chat, username, password):
         self.id_chat = id_chat
         self.db = Database()
-        self.id_user = self.__get_user_id(id_user)
-        self.username = id_user
+        self.id_user = self.__get_user_id(username)
+        self.username = username
         self.password = password
         
     

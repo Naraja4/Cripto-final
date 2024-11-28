@@ -211,6 +211,8 @@ class sendMessageChat:
         print(result)
         # Asignar claves publicas a las variables correspondientes
         for row in result:
+            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            print('Row[0]: ', row[0], 'self.id_emisor: ', self.id_emisor, 'self.id_receptor: ', self.id_receptor)
             if row[0] == self.id_emisor:
                 public_key_emisor = row[1]
             else:
