@@ -46,7 +46,7 @@ class UserLogIn:
         else:
             logger.warning(f"Usuario '{self.username}' no encontrado en la base de datos.")
         
-        return False
+        raise Exception("Inicio de sesión fallido. Usuario o contraseña incorrectos.")
     
     def lookupUsername(self):
         try:
@@ -56,7 +56,7 @@ class UserLogIn:
             return result
         except Exception as e:
             logger.error(f"Error al consultar la base de datos: {e}")
-            return None
+            raise Exception("Error al consultar la base de datos.")
 
 
     def __hash_password(self, password: str, salt: str) -> str:

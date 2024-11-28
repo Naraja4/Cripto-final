@@ -56,33 +56,41 @@ class Message(BaseModel):
 
 @app.post("/api/v1/login")
 async def login_view(login_request: LoginRequest):
-    if UserLogIn(login_request.username, login_request.password).login():
+    try:
+        UserLogIn(login_request.username, login_request.password).login()
         logger.info("Se ha iniciado sesión")
         return {"login": "success"}, 200
-    else:
-        logger.error("No se ha podido iniciar sesión")
+    except Exception as e:
+        logger.error("No se ha podido iniciar sesión debido a: " + str(e))
         return {"login": "failed"}, 401
 
 @app.post("/api/v1/signup")
 async def signup_view(login_request: LoginRequest):
-    if UserSignUp(login_request.username, login_request.password).signup():
+    try: 
+        UserSignUp(login_request.username, login_request.password).signup()
         logger.info("Se ha registrado el usuario")
         return {"signup": "success"}, 200
-    else:
-        logger.error("No ha podido registrarse el usuario")
+    except Exception as e:
+        logger.error("No ha podido registrarse el usuario debido a: " + str(e))
         return {"signup": "failed"}, 400
 
 @app.post("/api/v1/send-message")
 async def send_message_view(message: Message):
-    if sendMessageChat(message.id_chat, message.id_emisor, message.id_receptor, message.mensaje, message.password).store():
+    try:
+        sendMessageChat(message.id_chat, message.id_emisor, message.id_receptor, message.mensaje, message.password).store()
         return {"message": "success"}, 200
-    else:
+    except Exception as e:
+        logger.error("No se ha podido enviar el mensaje debido a: " + str(e))
         return {"message": "failed"}, 400
 
 @app.get("/api/v1/get-messages/{id_chat}/{username}/{password}")
 async def get_messages_view(id_chat: int, username: str, password: str):
-    messages = getMessagesChat(id_chat, username, password).getMessages()
-    return {"messages": messages}
+    try:
+        messages = getMessagesChat(id_chat, username, password).getMessages()
+        return {"messages": messages}
+    except Exception as e:
+        logger.error("No se ha podido obtener los mensajes debido a: " + str(e))
+        return {"messages": "failed"}, 400
 
 @app.get("/api/v1/get-private-key/{username}/{password}")
 async def get_private_key_view(username: str, password: str):
@@ -91,9 +99,8 @@ async def get_private_key_view(username: str, password: str):
         key = key.decode()
         logger.info("Se ha obtenido la clave privada")
         return {"private_key": key}
-    except:
-        #Devuelve HTTP code 400
-        logger.error("No se ha podido obtener la clave privada")
+    except Exception as e:
+        logger.error("No se ha podido obtener la clave privada debido a: " + str(e))
         raise HTTPException(status_code=400, detail="No se ha podido obtener la clave privada")
 
 
@@ -103,9 +110,8 @@ async def get_public_key_view(username: str):
         key = getPublicKey().getPublicKey(username)
         logger.info("Se ha obtenido la clave pública")
         return {"public_key": key}
-    except:
-        #Devuelve HTTP code 400
-        logger.error("No se ha podido obtener la clave pública")
+    except Exception as e:
+        logger.error("No se ha podido obtener la clave pública debido a: " + str(e))
         raise HTTPException(status_code=400, detail="No se ha podido obtener la clave pública")
     
 

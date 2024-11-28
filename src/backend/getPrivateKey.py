@@ -21,7 +21,7 @@ console_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s
 console_handler.setFormatter(console_formatter)
 
 logger.addHandler(file_handler)
-#logger.addHandler(console_handler)
+logger.addHandler(console_handler)
 
 
 
@@ -61,7 +61,7 @@ class getPrivateKey:
         
         except Exception as e:
             logger.error(f"Error al consultar la base de datos: {e}")
-            raise e
+            raise Exception("Error al consultar la base de datos.")
         
     def getPrivateKey_withId(self, id, password):
         try:
@@ -94,6 +94,6 @@ class getPrivateKey:
         
         except Exception as e:
             logger.error(f"Error al consultar la base de datos: {e}")
-            raise e
+            raise Exception("Error al consultar la base de datos.")
     
     

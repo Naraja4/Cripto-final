@@ -28,7 +28,7 @@ console_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s
 console_handler.setFormatter(console_formatter)
 
 logger.addHandler(file_handler)
-#logger.addHandler(console_handler)
+logger.addHandler(console_handler)
 
 class getMessagesChat:
     def __init__(self, id_chat, username, password):
@@ -61,7 +61,8 @@ class getMessagesChat:
 
             return messages
         except Exception as e:
-            raise e
+            logger.error(f"Error al obtener mensajes: {e}")
+            raise Exception("Error al obtener mensajes.")
     
     def __decrypt_message(self, mensaje, private_key):
         try:

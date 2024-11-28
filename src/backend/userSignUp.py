@@ -63,9 +63,14 @@ class UserSignUp:
         """
         values = (self.username, salt, hashed_password, public_key, encrypted_key.hex())
 
-        self.db.query(query, values)
-        self.db.cnx.commit()
-        logger.info(f"{self.username} {self.password} ha sido introducido a la base de datos.")
+        try:
+            self.db.query(query, values)
+            self.db.cnx.commit()
+            logger.info(f"{self.username} {self.password} ha sido introducido a la base de datos.")
+            
+        except Exception as e:
+            logger.error(f"Error al insertar usuario en la base de datos: {e}")
+            raise Exception("Error al insertar usuario en la base de datos.")
 
     def __hash_password(self, password: str, salt: str) -> str:
         password_bytes = password.encode('utf-8')

@@ -133,17 +133,17 @@ class sendMessageChat:
                 # Verificar fechas de validez
                 if not verify_validity_dates(cert):
                     logger.error(f"Error: Certificado {cert.subject.rfc4514_string()} fuera de validez.")
-                    return False
+                    raise Exception("Certificado "+cert.subject.rfc4514_string()+" fuera de validez.")
 
                 # Verificar que el certificado está firmado por el emisor (issuer)
                 if not verify_signature(cert, issuer_cert):
                     logger.error(f"Error: Certificado {cert.subject.rfc4514_string()} no está firmado por {issuer_cert.subject.rfc4514_string()}")
-                    return False
+                    raise Exception("Certificado "+cert.subject.rfc4514_string()+" no está firmado por "+issuer_cert.subject.rfc4514_string())
 
             # Verificar fechas de validez del certificado raíz
             if not verify_validity_dates(certs[-1]):
                 logger.error(f"Error: Certificado raíz {certs[-1].subject.rfc4514_string()} fuera de validez.")
-                return False
+                raise Exception("Certificado raíz fuera de validez.")
 
             return True
         
@@ -154,7 +154,7 @@ class sendMessageChat:
         
         if not verify_certificate_chain(cadena_certificados):
             logger.error("Error: La cadena de certificados no es válida.")
-            return False
+            raise Exception("Cadena de certificados no válida.")
         
         logger.info("La cadena de certificados es válida.")
 
@@ -171,7 +171,7 @@ class sendMessageChat:
         # Descifrar la firma
         if pow(signature, public_key_e, public_key_n) != int(hmac_computed, 16):
             logger.error(f"Las firmas no coinciden")
-            return False
+            raise Exception("Las firmas no coinciden")
 
         logger.info(f"Se ha confirmado que las firmas coinciden")
         # Clave privada en el backend, que se encuentra en claveRSA/private_key.pem
@@ -184,7 +184,6 @@ class sendMessageChat:
         cipher_rsa = PKCS1_OAEP.new(private_key)
         key_decrypted = cipher_rsa.decrypt(key_encrypted)
         logger.info(f"Se ha decodificado la clave obteniendo:{key_decrypted}")
-        print("Decoded key: ", key_decrypted)
 
          # Computa el HMAC del mensaje con la key decodificada
         hmac_computed_decoded = HMAC.new(key_decrypted, digestmod=SHA256)
@@ -192,10 +191,9 @@ class sendMessageChat:
         hmac_computed_decoded = hmac_computed_decoded.hexdigest()
         
         if hmac_computed != hmac_computed_decoded:
-            print("HMAC computed: ", hmac_computed)
-            print("HMAC computed decoded: ", hmac_computed_decoded)
-            print("HMACs do not match")
-            return False
+            logger.error(f"HMACs no coinciden, HMAC recibido: {hmac_computed}, HMAC computado: {hmac_computed_decoded}")
+            raise Exception("HMACs no coinciden")
+        
         logger.info(f"Se ha confirmado que el HMAC es el correcto")
         #Ahora se puede descifrar self.mensaje con la key decodificada, ya que self.message fue cifrado con la key con AES
         nonce = bytes.fromhex(ct[:16])
@@ -208,11 +206,8 @@ class sendMessageChat:
         # Obtener claves publicas de receptor y emisor
         query = "SELECT id_usuario, public_key FROM Users WHERE id_usuario = %s OR id_usuario = %s"
         result = self.db.query(query, (self.id_emisor, self.id_receptor))
-        print(result)
         # Asignar claves publicas a las variables correspondientes
         for row in result:
-            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-            print('Row[0]: ', row[0], 'self.id_emisor: ', self.id_emisor, 'self.id_receptor: ', self.id_receptor)
             if row[0] == self.id_emisor:
                 public_key_emisor = row[1]
             else:
