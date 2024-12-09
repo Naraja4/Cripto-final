@@ -148,11 +148,6 @@ class sendMessageChat:
                 logger.error(f"Error: Certificado raíz {certs[-1].subject.rfc4514_string()} fuera de validez.")
                 raise Exception("Certificado raíz fuera de validez.")
             
-            # Verificar que el certificado raíz está firmado por sí mismo
-            if not verify_signature(certs[-1], certs[-1]):
-                logger.error(f"Error: Certificado raíz {certs[-1].subject.rfc4514_string()} no está firmado por sí mismo.")
-                raise Exception("Certificado raíz no está firmado por sí mismo.")
-
             return True
         
         if self.id_emisor == 13:
