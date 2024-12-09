@@ -30,44 +30,21 @@ class UserSignUp:
         self.db = Database()
     
     def signup(self):
-        key = RSA.generate(2048)
         salt = get_random_bytes(32).hex()
         hashed_password = self.__hash_password(self.password, salt)
         logger.info(f"Contraseña {self.password} ha sido hasheada con SHA256.")
 
-        #SHA-256 hash de la contraseña para usar como clave AESy
-        AES_key = SHA256.new()
-        AES_key.update(self.password.encode())
-        logger.info(f"AES de password es: {AES_key.hexdigest()}")
-
-        # Crear un nonce de 8 bytes para el modo CTR
-        nonce = get_random_bytes(8)
-
-        # Se ha encriptado la clave privada con la clave derivada de la contraseña
-        cipher = AES.new(AES_key.digest(), AES.MODE_CTR, nonce=nonce)
-
-        private_key = key.export_key()
-        encrypted_key = cipher.encrypt(private_key)
-        encrypted_key = nonce + encrypted_key
-        
-        logger.info(f"Clave privada ha sido encriptada con AES.")
-
-        public_key = key.publickey().export_key()
-
-        logger.info(f"Clave privada es: {private_key}")
-        logger.info(f"Clave privada encriptada es: {encrypted_key.hex()}")
-        
         query = """
-            INSERT INTO Users (username, salt, hashed_password, public_key, encrypted_private_key) 
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO Users (username, salt, hashed_password) 
+            VALUES (%s, %s, %s)
         """
-        values = (self.username, salt, hashed_password, public_key, encrypted_key.hex())
+        values = (self.username, salt, hashed_password)
 
         try:
             self.db.query(query, values)
             self.db.cnx.commit()
             logger.info(f"{self.username} {self.password} ha sido introducido a la base de datos.")
-            
+             
         except Exception as e:
             logger.error(f"Error al insertar usuario en la base de datos: {e}")
             raise Exception("Error al insertar usuario en la base de datos.")

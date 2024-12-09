@@ -1,11 +1,12 @@
 from database.Database import Database
-from Crypto.Hash import SHA256
+from Crypto.Hash import SHA256, HMAC
 from Crypto.Random import get_random_bytes
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 import logging
 import time
 from getPrivateKey import getPrivateKey
+from getPublicKey import getPublicKey
 
 '''
 1- Recibe el id_chat, id_usuario y password
@@ -41,7 +42,7 @@ class getMessagesChat:
     
     def getMessages(self):
         try:
-            private_key = getPrivateKey().getPrivateKey(self.username, self.password).decode()
+            private_key = getPrivateKey().getPrivateKeyFromFile("cripto_certs/" + self.username + "/" + self.username + "key.pem", self.password)
             query = "SELECT id_emisor, id_receptor, mensaje_encriptado_receptor, mensaje_encriptado_emisor FROM Mensajes WHERE id_chat = %s ORDER BY fecha ASC"
             result = self.db.query(query, (self.id_chat,))
             messages = []

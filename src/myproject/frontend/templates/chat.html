@@ -56,9 +56,6 @@
     <button id="send-btn">Enviar</button>
 
     <script>
-        let privateKey = null; // Clave privada del usuario
-        let receiverPublicKey = null; // Clave pública del destinatario (se puede obtener del backend)
-
         const username = sessionStorage.getItem('usuario');
         const password = sessionStorage.getItem('pass');
 
@@ -72,17 +69,6 @@
         document.getElementById('send-btn').addEventListener('click', async () => {
             const message = document.getElementById('message-input').value;
 
-            // Hacer call al backend para obtener la clave pública del receptor
-            /* const response = await fetch('http://localhost:8081/api/v1/get-backend-public-key/');
-            const data = await response.json();
-            if (response.status === 200) {
-                receiverPublicKey = data.public_key;
-            } else {
-                alert('Error al obtener la clave pública del receptor');
-            }
-            console.log(receiverPublicKey);
-            console.log(message);
-            console.log(privateKey);*/
             if (message) {
                 console.log('Enviando mensaje...');
                 // Enviar mensaje al backend

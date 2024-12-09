@@ -3,6 +3,10 @@ from Crypto.Hash import SHA256
 from Crypto.Random import get_random_bytes
 import logging
 import time
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
 
 
 logger = logging.getLogger(__name__)
@@ -27,26 +31,25 @@ class getPublicKey:
     def __init__(self):
         self.db = Database()
     
-    def getPublicKey(self, username):
-        try:
-            query = "SELECT public_key FROM Users WHERE username = %s"
-            logger.debug(f"Ejecutando consulta SQL: {query}")
-            result = self.db.query(query, (username,))
-            print(f"Resultado de la consulta: {result[0][0]}")
-            return result[0][0]
-        except Exception as e:
-            logger.error(f"Error al consultar la base de datos: {e}")
-            raise Exception("Error al consultar la base de datos.")
+    def getPublicKeyFromCertificate(self, certificate_path):    
+        # Read the certificate file
+        with open(certificate_path, 'rb') as cert_file:
+            cert_data = cert_file.read()
         
-    def getPublicKey_withId(self, id_user):
-        try:
-            query = "SELECT public_key FROM Users WHERE id_usuario = %s"
-            logger.debug(f"Ejecutando consulta SQL: {query}")
-            result = self.db.query(query, (id_user,))
-            print(f"Resultado de la consulta: {result[0][0]}")
-            return result[0][0]
-        except Exception as e:
-            logger.error(f"Error al consultar la base de datos: {e}")
-            raise Exception("Error al consultar la base de datos.")
-    
-    
+        # Load the certificate
+        cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+        
+        # Extract the public key
+        public_key = cert.public_key()
+
+        # Serialize the public key to PEM format
+        public_key_pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        
+        # Return the text representation of the public key
+        return public_key_pem.decode('utf-8')
+            
+
+        

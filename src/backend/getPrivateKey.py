@@ -5,6 +5,9 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
 import logging
 import time
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+
 
 
 logger = logging.getLogger(__name__)
@@ -29,71 +32,29 @@ class getPrivateKey:
     def __init__(self):
         self.db = Database()
     
-    def getPrivateKey(self, username, password):
-        try:
-            logger.info(f"Obteniendo clave privada de usuario {username}.")
-            logger.info(f"Contraseña de usuario {username} es: {password}")
-            query = "SELECT encrypted_private_key FROM Users WHERE username = %s"
-            logger.debug(f"Ejecutando consulta SQL: {query}")
-            result = self.db.query(query, (username,))
+    def getPrivateKeyFromFile(self, private_key_path, password):
+        # Read the encrypted private key file
+        with open(private_key_path, 'rb') as key_file:
+            encrypted_key = key_file.read()
+        
+        # Load and decrypt the private key
+        private_key = serialization.load_pem_private_key(
+            encrypted_key,
+            password=password.encode(),  # Convert password to bytes
+            backend=default_backend()
+        )
 
-            encrypted_data = bytes.fromhex(result[0][0])
-
-            #SHA-256 hash de la contraseña para usar como la clave de AES
-            AES_key = SHA256.new()
-            AES_key.update(password.encode())
-
-            nonce = encrypted_data[:8]
-            logger.info(f"Nonce es: {nonce}")
-            encrypted_key = encrypted_data[8:]
-            logger.info(f"Se ha encriptado la clave obteniendo: {encrypted_key}")
-
-            logger.info(f"AES de la contraseña es: {AES_key.hexdigest()}")
-
-            # Decriptar la clave privada con AES
-            cipher = AES.new(AES_key.digest(), AES.MODE_CTR, nonce=nonce)
-            logger.info(f"result[0][0] es: {result[0][0]}")
-            private_key = cipher.decrypt(encrypted_key)
-            logger.info(f"Clave privada ha sido desencriptada con AES.")
-            logger.info(f"Clave privada es: {private_key.decode()}")
-            return private_key
+        # Serialize the private key to PEM format
+        private_key_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()  # No encryption for the output PEM
+        )
+        
+        # Return the text representation of the private key
+        return private_key_pem.decode('utf-8')
 
         
-        except Exception as e:
-            logger.error(f"Error al consultar la base de datos: {e}")
-            raise Exception("Error al consultar la base de datos.")
-        
-    def getPrivateKey_withId(self, id, password):
-        try:
-            logger.info(f"Obteniendo clave privada de usuario con id {id}.")
-            query = "SELECT encrypted_private_key FROM Users WHERE id_usuario = %s"
-            logger.debug(f"Ejecutando consulta SQL: {query}")
-            result = self.db.query(query, (id,))
+            
 
-            encrypted_data = bytes.fromhex(result[0][0])
-
-            #SHA-256 hash de la contraseña para usar como la clave de AES
-            AES_key = SHA256.new()
-            AES_key.update(password.encode())
-
-            nonce = encrypted_data[:8]
-            logger.info(f"Nonce es: {nonce}")
-            encrypted_key = encrypted_data[8:]
-            logger.info(f"Se ha encriptado la clave obteniendo: {encrypted_key}")
-
-            logger.info(f"AES de la contraseña es: {AES_key.hexdigest()}")
-
-            # Decriptar la clave privada con AES
-            cipher = AES.new(AES_key.digest(), AES.MODE_CTR, nonce=nonce)
-            logger.info(f"result[0][0] es: {result[0][0]}")
-            private_key = cipher.decrypt(encrypted_key)
-            logger.info(f"Clave privada ha sido desencriptada con AES.")
-            logger.info(f"Clave privada es: {private_key.decode()}")
-            return private_key
-
-        
-        except Exception as e:
-            logger.error(f"Error al consultar la base de datos: {e}")
-            raise Exception("Error al consultar la base de datos.")
-    
-    
+            

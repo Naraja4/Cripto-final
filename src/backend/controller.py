@@ -92,7 +92,7 @@ async def get_messages_view(id_chat: int, username: str, password: str):
         logger.error("No se ha podido obtener los mensajes debido a: " + str(e))
         return {"messages": "failed"}, 400
 
-@app.get("/api/v1/get-private-key/{username}/{password}")
+'''@app.get("/api/v1/get-private-key/{username}/{password}")
 async def get_private_key_view(username: str, password: str):
     try:
         key = getPrivateKey().getPrivateKey(username, password)
@@ -116,7 +116,7 @@ async def get_public_key_view(username: str):
     
 
     # Para posible uso futuro
-'''@app.get("/api/v1/get-backend-public-key")
+@app.get("/api/v1/get-backend-public-key")
 async def get_backend_public_key():
     try:
         with open("clavesRSA/public_key.pem", "rb") as public_file:

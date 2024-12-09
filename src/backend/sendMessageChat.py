@@ -60,10 +60,8 @@ class sendMessageChat:
 
         logger.info(f"Se ha generado la clave HMAC que es :{hmac_computed}")
         
-        # Clave publica en el backend, que se encuentra en claveRSA/public_key.pem
-        open_key = open("clavesRSA/public_key.pem", "rb")
-        public_key = open_key.read()
-        open_key.close()
+        # Clave publica en el backend, que se encuentra en cripto_certs/BACKEND/BACKENDcert.pem
+        public_key = getPublicKey().getPublicKeyFromCertificate("cripto_certs/BACKEND/BACKENDcert.pem")
         public_key = RSA.import_key(public_key)
 
         # Codifica la key
@@ -75,7 +73,12 @@ class sendMessageChat:
         # Firmar el HMAC con la clave privada
 
         # Pillar clave privada emisor
-        private_key = getPrivateKey().getPrivateKey_withId(self.id_emisor, self.password)
+        if self.id_emisor == 13:
+            username = "Ivan"
+        else:
+            username = "Ismael"
+
+        private_key = getPrivateKey().getPrivateKeyFromFile("cripto_certs/"+username+"/"+username+"key.pem", self.password)
         logger.info(f"Se ha obtenido la clave privada del emisor")
 
         private_key = RSA.import_key(private_key)
@@ -144,13 +147,18 @@ class sendMessageChat:
             if not verify_validity_dates(certs[-1]):
                 logger.error(f"Error: Certificado raíz {certs[-1].subject.rfc4514_string()} fuera de validez.")
                 raise Exception("Certificado raíz fuera de validez.")
+            
+            # Verificar que el certificado raíz está firmado por sí mismo
+            if not verify_signature(certs[-1], certs[-1]):
+                logger.error(f"Error: Certificado raíz {certs[-1].subject.rfc4514_string()} no está firmado por sí mismo.")
+                raise Exception("Certificado raíz no está firmado por sí mismo.")
 
             return True
         
         if self.id_emisor == 13:
-            cadena_certificados = ["certificados/Acert.pem", "certificados/ac2cert.pem", "certificados/ac1cert.pem"]
+            cadena_certificados = ["cripto_certs/Ivan/Ivancert.pem", "cripto_certs/ac2/ac2cert.pem", "cripto_certs/ac1/ac1cert.pem"]
         else:
-            cadena_certificados = ["certificados/Bcert.pem", "certificados/ac2cert.pem", "certificados/ac1cert.pem"]
+            cadena_certificados = ["cripto_certs/Ismael/Ismaelcert.pem", "cripto_certs/ac2/ac2cert.pem", "cripto_certs/ac1/ac1cert.pem"]
         
         if not verify_certificate_chain(cadena_certificados):
             logger.error("Error: La cadena de certificados no es válida.")
@@ -160,7 +168,7 @@ class sendMessageChat:
 
         # Descifrar la firma con la clave publica
         # Pillar clave publica emisor
-        public_key = getPublicKey().getPublicKey_withId(self.id_emisor)
+        public_key = getPublicKey().getPublicKeyFromCertificate("cripto_certs/"+username+"/"+username+"cert.pem")
         logger.info(f"Se ha obtenido la clave publica del emisor")
 
         public_key = RSA.import_key(public_key)
@@ -174,10 +182,8 @@ class sendMessageChat:
             raise Exception("Las firmas no coinciden")
 
         logger.info(f"Se ha confirmado que las firmas coinciden")
-        # Clave privada en el backend, que se encuentra en claveRSA/private_key.pem
-        open_key = open("clavesRSA/private_key.pem", "rb")
-        private_key = open_key.read()
-        open_key.close()
+        # Clave privada en el backend, que se encuentra en cripto_certs/BACKEND/BACKENDkey.pem
+        private_key = getPrivateKey().getPrivateKeyFromFile("cripto_certs/BACKEND/BACKENDkey.pem", "1234")
         private_key = RSA.import_key(private_key)
 
         # Decodifica la key
@@ -202,17 +208,14 @@ class sendMessageChat:
         mensaje = cipher.decrypt(ct).decode()
 
         logger.info(f"Se ha descifrado el mensaje obteniendo:{mensaje}")
-        
-        # Obtener claves publicas de receptor y emisor
-        query = "SELECT id_usuario, public_key FROM Users WHERE id_usuario = %s OR id_usuario = %s"
-        result = self.db.query(query, (self.id_emisor, self.id_receptor))
-        # Asignar claves publicas a las variables correspondientes
-        for row in result:
-            if row[0] == self.id_emisor:
-                public_key_emisor = row[1]
-            else:
-                public_key_receptor = row[1]
-        logger.info(f"La clave publica del receptor es:{public_key_emisor}")
+
+        if self.id_emisor == 13:
+            public_key_emisor = getPublicKey().getPublicKeyFromCertificate("cripto_certs/Ivan/Ivancert.pem")
+            public_key_receptor = getPublicKey().getPublicKeyFromCertificate("cripto_certs/Ismael/Ismaelcert.pem")
+        else:
+            public_key_emisor = getPublicKey().getPublicKeyFromCertificate("cripto_certs/Ismael/Ismaelcert.pem")
+            public_key_receptor = getPublicKey().getPublicKeyFromCertificate("cripto_certs/Ivan/Ivancert.pem")
+
         # Cifrar mensaje con clave publica del receptor
         key = RSA.import_key(public_key_receptor)
         logger.info(f"La clave publica del receptor es:{public_key_receptor}")
